@@ -5,7 +5,7 @@ type TipoPet = {
     nome: string;
     especie: EnumEspecie;
     adotado: boolean;
-    dataNascimento: Date;
+    dataDeNascimento: Date;
 }
 
 export default TipoPet;
