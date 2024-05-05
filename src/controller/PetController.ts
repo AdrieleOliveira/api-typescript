@@ -3,6 +3,7 @@ import type TipoPet from "../tipos/TipoPet";
 import EnumEspecie from "../enum/EnumEspecie";
 import PetRepository from "../repositories/PetRepository";
 import PetEntity from "../entities/PetEntity";
+import EnumPorte from "../enum/EnumPorte";
 
 //let listaDePets:TipoPet[] = [];
 let listaDePets: Array<TipoPet> = [];
@@ -18,8 +19,8 @@ export default class PetController {
 
     constructor(private repository: PetRepository) { }
 
-    criaPet(req: Request, res:Response){
-        const { adotado, especie, dataDeNascimento, nome } = <PetEntity> req.body;
+    async criaPet(req: Request, res:Response){
+        const { adotado, especie, dataDeNascimento, nome, porte } = <PetEntity> req.body;
 
         if(!adotado || !especie || !nome || !dataDeNascimento){
             return res.status(400).json({ error: "Todos os campos são obrigatórios. " })
@@ -29,13 +30,13 @@ export default class PetController {
             return res.status(400).json({ error: "Espécie inválida "});
         }
 
-        const novoPet = new PetEntity();
-        novoPet.adotado = adotado;
-        novoPet.nome = nome;
-        novoPet.dataDeNascimento = dataDeNascimento;
-        novoPet.especie = especie;
+        if(porte && !(porte in EnumPorte)){
+            return res.status(400).json({ error: "Porte inválido "});
+        }
 
-        this.repository.criaPet(novoPet);
+        const novoPet = new PetEntity(nome, especie, dataDeNascimento, adotado, porte);
+
+        await this.repository.criaPet(novoPet);
 
         return res.status(201).json(novoPet);
     }
@@ -65,5 +66,23 @@ export default class PetController {
         }
 
         return res.sendStatus(204);
+    }
+
+    async adotaPet(req: Request, res: Response){
+        const { pet_id, id_adotante } = req.params;
+        const { success, message } = await this.repository.adotaPet(Number(pet_id), Number(id_adotante));
+
+        if (!success){
+            return res.status(404).json({ message });
+        }
+
+        return res.sendStatus(204);
+    }
+
+    async buscaPet(req: Request, res: Response){
+        const { campo, valor } = req.query;
+        const lista = await this.repository.buscaPet(campo as keyof PetEntity, valor as string);
+
+        return res.status(200).json(lista);
     }
 }
